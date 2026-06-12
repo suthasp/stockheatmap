@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Heatmap — หุ้นไทย SET</title>
+<style>
+  :root{
+    --bg:#131722; --panel:#1e222d; --border:#2a2e39;
+    --text:#d1d4dc; --muted:#787b86; --accent:#2962ff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',-apple-system,Roboto,'Helvetica Neue',sans-serif;
+    display:flex; flex-direction:column;
+  }
+  header{
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--border);
+  }
+  header h1{font-size:16px; font-weight:600}
+  header h1 .dot{color:#26a69a}
+  .controls{display:flex; gap:10px; margin-left:auto; flex-wrap:wrap}
+  select{
+    background:var(--bg); color:var(--text); border:1px solid var(--border);
+    border-radius:6px; padding:6px 10px; font-size:13px; cursor:pointer; outline:none;
+  }
+  select:hover{border-color:var(--accent)}
+  label{font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px}
+  #heatmap{flex:1; min-height:0}
+  footer{
+    padding:6px 16px; background:var(--panel); border-top:1px solid var(--border);
+    font-size:11px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  #clock{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="dot">●</span> Stock Heatmap</h1>
+  <div class="controls">
+    <label>ตลาด
+      <select id="dataSource">
+        <option value="SET100" selected>SET100 (ไทย)</option>
+        <option value="SET50">SET50 (ไทย)</option>
+        <option value="SPX500">S&amp;P 500 (สหรัฐ)</option>
+        <option value="NASDAQ100">NASDAQ 100 (สหรัฐ)</option>
+      </select>
+    </label>
+    <label>จัดกลุ่ม
+      <select id="grouping">
+        <option value="sector" selected>ตามกลุ่มอุตสาหกรรม</option>
+        <option value="no_group">ไม่จัดกลุ่ม</option>
+      </select>
+    </label>
+    <label>สีตาม
+      <select id="blockColor">
+        <option value="change" selected>% เปลี่ยนแปลงวันนี้</option>
+        <option value="Perf.W">% สัปดาห์</option>
+        <option value="Perf.1M">% เดือน</option>
+        <option value="Perf.YTD">% YTD</option>
+      </select>
+    </label>
+  </div>
+</header>
+
+<div id="heatmap"></div>
+
+<footer>
+  <span>ข้อมูลโดย TradingView — ราคาอัปเดตอัตโนมัติ (อาจดีเลย์ตามข้อกำหนดของแต่ละตลาด)</span>
+  <span id="clock"></span>
+</footer>
+
+<script>
+  const container = document.getElementById('heatmap');
+
+  function loadHeatmap() {
+    container.innerHTML = '<div class="tradingview-widget-container" style="height:100%;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div></div>';
+    const cfg = {
+      dataSource: document.getElementById('dataSource').value,
+      grouping: document.getElementById('grouping').value,
+      blockSize: 'market_cap_basic',
+      blockColor: document.getElementById('blockColor').value,
+      locale: 'th_TH',
+      colorTheme: 'dark',
+      symbolUrl: '',
+      hasTopBar: true,
+      isDataSetEnabled: true,
+      isZoomEnabled: true,
+      hasSymbolTooltip: true,
+      isMonoSize: false,
+      width: '100%',
+      height: '100%'
+    };
+    const s = document.createElement('script');
+    s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js';
+    s.async = true;
+    s.innerHTML = JSON.stringify(cfg);
+    container.firstChild.appendChild(s);
+  }
+
+  // จำค่าที่เลือกไว้ และโหลดใหม่เมื่อเปลี่ยน
+  ['dataSource','grouping','blockColor'].forEach(id=>{
+    const el = document.getElementById(id);
+    const saved = localStorage.getItem('hm_'+id);
+    if (saved && [...el.options].some(o=>o.value===saved)) el.value = saved;
+    el.addEventListener('change', ()=>{
+      localStorage.setItem('hm_'+id, el.value);
+      loadHeatmap();
+    });
+  });
+
+  loadHeatmap();
+
+  // นาฬิกาเวลาไทย
+  setInterval(()=>{
+    document.getElementById('clock').textContent =
+      new Date().toLocaleString('th-TH',{timeZone:'Asia/Bangkok',dateStyle:'medium',timeStyle:'medium'});
+  },1000);
+</script>
+
+</body>
+</html>
